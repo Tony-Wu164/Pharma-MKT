@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>202603 Severe Asthma Quiz</title>
+    <style>
+        :root {
+            --primary-color: #3f51b5;
+            --success-color: #4caf50;
+            --error-color: #f44336;
+            --background-grad: linear-gradient(135deg, #e0f2f1 0%, #d1c4e9 100%);
+            --text-color: #2c3e50;
+        }
+
+        body { 
+            font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; 
+            background: var(--background-grad);
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; margin: 0; padding: 20px;
+        }
+
+        .card { 
+            background: rgba(255, 255, 255, 0.95);
+            padding: 2.5rem; border-radius: 20px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
+            width: 100%; max-width: 550px; text-align: center;
+        }
+
+        .progress-container {
+            width: 100%; height: 8px; background-color: #e0e0e0;
+            border-radius: 4px; margin-bottom: 2rem; overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%; background: var(--primary-color);
+            width: 0%; transition: width 0.4s ease-out;
+        }
+
+        .question { 
+            font-size: 1.3rem; margin-bottom: 2rem; color: #455a64;
+            line-height: 1.6; font-weight: 600;
+        }
+
+        .options { display: grid; gap: 12px; }
+
+        button { 
+            padding: 15px; border: 2px solid #e0e0e0; border-radius: 12px; 
+            background-color: white; cursor: pointer; font-size: 1.1rem;
+            transition: all 0.2s; outline: none;
+        }
+
+        /* 答案反饋樣式 */
+        button.correct-ans { background-color: #e8f5e9; border-color: var(--success-color); color: #2e7d32; font-weight: bold; }
+        button.wrong-ans { background-color: #ffebee; border-color: var(--error-color); color: #c62828; }
+
+        /* 彈窗樣式 */
+        .modal {
+            display: none; position: fixed; top: 0; left: 0; 
+            width: 100%; height: 100%; background: rgba(0,0,0,0.7);
+            z-index: 1000; justify-content: center; align-items: center;
+        }
+        .modal-content {
+            background: white; padding: 30px; border-radius: 15px;
+            max-width: 450px; width: 90%; text-align: left;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            animation: fadeIn 0.3s;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .key-message-box {
+            background: #f0f4ff; border-left: 5px solid var(--primary-color);
+            padding: 15px; margin: 15px 0; font-size: 1rem; color: #1a237e;
+        }
+
+        .next-btn {
+            background: var(--primary-color); color: white; border: none;
+            width: 100%; padding: 12px; border-radius: 8px; font-size: 1.1rem; margin-top: 10px;
+        }
+
+        .result-area { display: none; }
+        .score { font-size: 4rem; font-weight: 800; margin: 10px 0; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div id="quiz-container">
+        <div class="progress-container"><div class="progress-bar" id="my-progress-bar"></div></div>
+        <h3 id="step-title" style="color:#777;"></h3>
+        <p class="question" id="question-text"></p>
+        <div class="options" id="options-container"></div>
+    </div>
+
+    <div id="result-container" class="result-area">
+        <h2>挑戰結束</h2>
+        <div class="score" id="final-score">0</div>
+        <p id="feedback-text"></p>
+        <div id="joke-display" style="background:#eee; padding:15px; border-radius:8px; margin:15px 0; font-style:italic; display:none;"></div>
+        <button onclick="location.reload()" class="next-btn">重新開始</button>
+    </div>
+</div>
+
+<div id="message-modal" class="modal">
+    <div class="modal-content">
+        <h2 id="modal-status" style="margin-top:0;"></h2>
+        <p id="correct-answer-is" style="font-weight:bold; color:#555;"></p>
+        <div class="key-message-box">
+            <strong>Key Message:</strong>
+            <p id="key-message-text" style="margin: 8px 0 0 0;"></p>
+        </div>
+        <button onclick="closeModal()" class="next-btn">下一題</button>
+    </div>
+</div>
+
+<script>
+    // 題庫設計：您可以自由修改這裡的內容
+    const questions = [
+        { 
+            q: "請問EVEREST Trial證實哪個族群的病人Dupi比Oma有絕對的優勢", 
+            a: ["嚴重CRSwNP合併不同嚴重程度的氣喘", "嚴重CRSwNP合併嚴重氣喘", "不同嚴重程度的CRSwNP合併嚴重氣喘"], 
+            correct: 0, 
+            message: "2026AAAAI發現同時合併過敏性鼻炎的族群效果一致：過敏性首選是Dupi!"
+        },
+        { 
+            q: "請問下列EVEREST Trial透過哪種分組比較的方式證實Dupilumab應考慮Early intervention", 
+            a: ["Dupi+High dose ICS vs. Oma+medium dose ICS", "Dupi+Medium dose ICS vs. Oma+High dose ICS", "Dupi+High dose ICS vs. Oma+High dose ICS"], 
+            correct: 1, 
+            message: "未來臨床試驗會探討中劑量ICS的族群是不是控制不佳就應考慮上生物製劑，而非等到加到高劑量ICS控制不加，在EVEREST Trial Dupi＋中劑量ICS是一個及早切入的代表，且優於Oma+high dose ICS，提供我們正面的看法．（注意：QUEST Trial裡面也有中劑量ICS）"
+        },
+        { 
+            q: "請問在Dupi SINUS-52 跟Teze WAYPOINT的間接比較中，哪項指標在校正後看到Dupi的優勢", 
+            a: ["嗅覺改善", "生活品質", "鼻息肉大小", "再次手術"], 
+            correct: 2, 
+            message: "在Brian Lipworth做的間接比較中，客觀的指標（鼻息肉大小的NPS, LMK)發現Dupi顯著優於Teze, 但是在嗅覺、生活品質、全身性類固醇的使用、再次手術這些帶有主觀成分高的是看見Dupi趨勢上差異或是兩者無差異（注意：雖然這篇間接比較是賽諾菲非贊助，但是我們贊助的對象同時也是Teze第三期臨床試驗的第一作者啊！應該可以減少廠商色彩的疑慮！）"
+        },
+        { 
+            q: "請問在嚴重氣喘的TRAVERSE (Dupi)相比DESTINATION(TEZE)的間接比較上，Dupi看見哪個優勢", 
+            a: ["FEV1", "Severe exacerbation", "ACT score"], 
+            correct: 0, 
+            message: "這篇間接比較我們看到moderate or severe exacerbation的優勢，另外也看到FEV1的進步幅度優於Teze，記得在肺功能的部分有我們的Brian Lipworth做過小呼吸道的探討發現Dupi是比Teze更好的選項"
+        },
+         { 
+            q: "請問在CHEST生物製劑的轉換建議什麼時候都考慮Teze", 
+            a: ["OCS-dependent", "Allergic asthma", "Eosinophilic asthma", "Type 2 low asthma"], 
+            correct: 0, 
+            message: "這篇文章有七個臨床問題，但請記住以下四點：\n\n1. Allergic asthma 的病人（考量EVEREST Trial)在所有情境都應該考慮Dupi而非Oma; \n2. Anti-IL-5控制不好，若FeNO>25應該優先建議Dupi; \n3. 只要有OCS-dependent的考量，不管是新用或是轉換藥物都不該考慮TEZE; \n4. 所以生物製劑除了Oma在non-OCS dependent的情境下都可以相互轉換"
+        },
+        
+    ];
+
+    let currentStep = 0;
+    let score = 0;
+
+    function loadQuestion() {
+        const qData = questions[currentStep];
+        document.getElementById("my-progress-bar").style.width = `${(currentStep / questions.length) * 100}%`;
+        document.getElementById("step-title").innerText = `Question ${currentStep + 1} / ${questions.length}`;
+        document.getElementById("question-text").innerText = qData.q;
+        
+        const optionsDiv = document.getElementById("options-container");
+        optionsDiv.innerHTML = "";
+        
+        qData.a.forEach((opt, index) => {
+            const btn = document.createElement("button");
+            btn.innerText = opt;
+            btn.onclick = () => handleAnswer(index, btn);
+            optionsDiv.appendChild(btn);
+        });
+    }
+
+    function handleAnswer(selectedIndex, btn) {
+        const qData = questions[currentStep];
+        const allButtons = document.querySelectorAll("#options-container button");
+        
+        // 禁用所有按鈕防止重複點擊
+        allButtons.forEach(b => b.disabled = true);
+
+        const isCorrect = selectedIndex === qData.correct;
+        
+        // 標示正確與錯誤顏色
+        if (isCorrect) {
+            score += 20;
+            btn.classList.add("correct-ans");
+            document.getElementById("modal-status").innerText = "✅ 回答正確";
+            document.getElementById("modal-status").style.color = "var(--success-color)";
+        } else {
+            btn.classList.add("wrong-ans");
+            allButtons[qData.correct].classList.add("correct-ans"); // 顯示正確在哪裡
+            document.getElementById("modal-status").innerText = "❌ 回答錯誤";
+            document.getElementById("modal-status").style.color = "var(--error-color)";
+        }
+
+        // 顯示彈窗內容
+        document.getElementById("correct-answer-is").innerText = `正確答案是：${qData.a[qData.correct]}`;
+        document.getElementById("key-message-text").innerText = qData.message;
+        
+        setTimeout(() => {
+            document.getElementById("message-modal").style.display = "flex";
+        }, 500); // 稍微延遲讓玩家看清楚按鈕變色
+    }
+
+    function closeModal() {
+        document.getElementById("message-modal").style.display = "none";
+        currentStep++;
+        if (currentStep < questions.length) {
+            loadQuestion();
+        } else {
+            showResult();
+        }
+    }
+
+    function showResult() {
+        document.getElementById("my-progress-bar").style.width = "100%";
+        document.getElementById("quiz-container").style.display = "none";
+        document.getElementById("result-container").style.display = "block";
+        
+        // 根據題目數量計算總分 (目前5題，每題20分；若改10題，每題10分)
+        // 這裡我們直接顯示累積的 score 變數即可
+        document.getElementById("final-score").innerText = score;
+        
+        const feedback = document.getElementById("feedback-text");
+        const jokeBox = document.getElementById("joke-display");
+
+        // --- 分數邏輯判斷開始 ---
+        if (score === 100) {
+            // 完美滿分
+            feedback.innerText = "太強了！完美達成挑戰！🏆";
+            jokeBox.innerText = "你們知道青蛙吃什麼就不再叫了嗎？ \n\n答案：冬瓜 (Don't呱) 🐸";
+            jokeBox.style.display = "block";
+        } 
+        else if (score >= 80) {
+            // 80 ~ 99 分 (通常是錯一題)
+            feedback.innerText = "表現優異！離滿分只差一點點了，請再努力挑戰 100 分吧！💪";
+            jokeBox.innerText = "一群海鮮在考試，但蝦子被發現作弊，老師就很生氣的問他說：「你抄誰的！！？」\n\n🦐蝦子：「我...我超蚌Der!」";
+            jokeBox.style.display = "block";
+        } 
+        else {
+            // 80 分以下
+            feedback.innerText = "請再加油！複習一下剛才的 Key Message，再次挑戰高分吧！✨";
+            jokeBox.style.display = "none"; // 不顯示笑話
+        }
+        // --- 分數邏輯判斷結束 ---
+    }
+
+    loadQuestion();
+</script>
+
+</body>
+</html>
