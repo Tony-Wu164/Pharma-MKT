@@ -431,7 +431,7 @@ function update(dt){
     tEos = 0.28 - L.il5*0.16;
     if(eos.length<CAP.eos){
       eos.push({alive:true, x:rnd(W*0.92,W*0.08), y:H+rnd(20,4),
-        vy:-rnd(26,16), wob:rnd(6.28), r:rnd(13,8), t:0,
+        vy:-rnd(26,16), wob:rnd(6.28), r:rnd(20,12), t:0,
         blocked:false, fired:0, target:layout.basalY+rnd(40,10)});
     }
   }
