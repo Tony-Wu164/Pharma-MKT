@@ -374,11 +374,11 @@ function update(dt){
   //   IL-13    -6        +50         +20
   //   IgE      -1        +5          +10   (IL-4 effector)
   let cbfT = 14, mucT = 5, remT = 0;
-  if(S.TSLP ){ cbfT-=4; mucT+=25; remT+=35; }
-  if(S.IL_4 ){ cbfT-=2; mucT+=10; remT+=20; }
-  if(S.IL_5 ){ cbfT-=2; mucT+=10; remT+=25; }
-  if(S.IL_13){ cbfT-=6; mucT+=50; remT+=20; }
-  if(S.IgE  ){ cbfT-=1; mucT+=5;  remT+=10; }
+  if(S.TSLP ){ cbfT-=5; mucT+=30; remT+=20; }
+  if(S.IL_4 ){ cbfT-=2; mucT+=5; remT+=20; }
+  if(S.IL_5 ){ cbfT-=0; mucT+=30; remT+=20; }
+  if(S.IL_13){ cbfT-=5; mucT+=30; remT+=20; }
+  if(S.IgE  ){ cbfT-=1; mucT+=5;  remT+=20; }
   // Dupixent normalization: blend every metric back toward its healthy baseline
   cbfT = 14 - (14 - cbfT)*sup;
   mucT = 5  + (mucT - 5)*sup;
